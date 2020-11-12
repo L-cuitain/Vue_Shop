@@ -1,0 +1,14 @@
+<template>
+  <router-view></router-view>
+</template>
+
+<style lang="less">
+#app {
+  height: 100%;
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #f0f2f5;
+}
+
+</style>
