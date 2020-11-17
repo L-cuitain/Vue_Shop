@@ -51,7 +51,7 @@
                     </a-tab-pane>
                     <a-tab-pane key="2" tab="手机号登录" force-render>
                       <!-- 手机登录表单 -->
-                      <a-form-item :wrapperCol="{ span: 24 }" >
+                      <a-form-item :wrapperCol="{ span: 24 }">
                         <a-input
                           size="large"
                           type="mobile"
@@ -67,7 +67,7 @@
                       <a-row :gutter="20">
                         <a-col :span="16">
                           <!-- 验证码 -->
-                          <a-form-item :wrapperCol="{ span: 24 }" >
+                          <a-form-item :wrapperCol="{ span: 24 }">
                             <a-input
                               size="large"
                               type="code"
@@ -105,7 +105,12 @@
               <!-- 确定按钮 -->
               <a-row>
                 <a-col :span="24">
-                  <a-button size="large" type="primary" block @click="handleSubmit">
+                  <a-button
+                    size="large"
+                    type="primary"
+                    block
+                    @click="handleSubmit"
+                  >
                     确定
                   </a-button>
                 </a-col>
@@ -143,6 +148,10 @@ import {
   WeiboCircleOutlined
 } from "@ant-design/icons-vue";
 
+import { httpPost } from "@/utils/http";
+
+import { user } from "@/api";
+
 export default {
   name: "Login",
   components: {
@@ -154,6 +163,7 @@ export default {
     TaobaoCircleOutlined,
     WeiboCircleOutlined
   },
+
   data() {
     return {
       formInline: {
@@ -164,30 +174,40 @@ export default {
       checked: false,
       //定义表单数据模型对象
       form: {
-        username : "",
-        password : "",
+        username: "",
+        password: ""
         // mobile : "",
         // code : ""
       },
       //定义表单校验规则
-      rules : {
+      rules: {
         //给字段添加规则
-        username : [
+        username: [
           {
-            required : true , message : "请输入用户名", trigger : "blur"
+            required: true,
+            message: "请输入用户名",
+            trigger: "blur"
           },
           {
-            min : 4 , max : 16 , message : "长度在4-16个字符之间" , trigger : "blur"
+            min: 2,
+            max: 16,
+            message: "长度在2-16个字符之间",
+            trigger: "blur"
           }
         ],
-        password : [
+        password: [
           {
-            required : true , message : "请输入密码" , trigger : "blur"
+            required: true,
+            message: "请输入密码",
+            trigger: "blur"
           },
           {
-            min : 6 , max : 16 , message : "长度在6-16个字符之间" , trigger : "blur"
+            min: 3,
+            max: 16,
+            message: "长度在3-16个字符之间",
+            trigger: "blur"
           }
-        ],
+        ]
         // mobile : [
         //   {
         //     required : true , message : "请输入电话号码" , trigger : "blur"
@@ -204,17 +224,38 @@ export default {
         //     min : 5 , message : "长度不能小于5" , trigger : "blur"
         //   }
         // ]
-      },
+      } 
     };
   },
   methods: {
-    handleSubmit(){
-      this.$refs.loginForm.validate().then(() => {
-        console.log("values",this.form);
-      })
-      .catch(error => {
-        console.log("error",error);
-      })
+    async handleSubmit() {
+      let result = await this.$refs.loginForm.validate();
+      //获取请求地址
+      const url = user.UserLogin;
+      //获取表单数据  存入对象中
+      let params = {
+        username: result.username,
+        password: result.password
+      };
+
+      let results = await httpPost(url, params);
+      console.log(results);
+
+      // //获取返回的参数
+      let { data , meta } = results;
+      //判断meta的返回状态码
+      if(meta.status == 400){
+        this.form.password = "";
+        return this.$message.error(meta.msg);
+      }
+
+      if(meta.status == 200){
+        this.$message.success(meta.msg);
+        //把返回的token传递给sessionStorage中
+        window.sessionStorage.setItem("token",data.token);
+        //跳转路由
+        this.$router.push('/home');
+      }
     }
   }
 };
@@ -228,7 +269,7 @@ export default {
 #components-layout-demo-basic,
 .ant-layout {
   height: 100%;
-  background: url("/image/background.svg");
+  background: url("/image/background.svg") #f0f2f5;
 }
 
 #components-layout-demo-basic .ant-layout-header {
@@ -304,7 +345,7 @@ export default {
   color: #1890ff;
 }
 
-.ant-form-explain{
-  text-align : left;
+.ant-form-explain {
+  text-align: left;
 }
 </style>
