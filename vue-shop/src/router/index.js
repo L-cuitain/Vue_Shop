@@ -18,8 +18,22 @@ const routes = [
   {
     name: "Home",
     path: "/home",
-    component: () => import("@/views/Home")
-  }
+    component: () => import("@/views/Home"),
+    children : [
+      {
+        path : "/home",
+        redirect : "/welcome"
+      },
+      {
+        path : '/welcome',
+        component : () => import("@/components/Welcome")
+      },
+      {
+        path : '/userList',
+        component : () => import("@/components/UserList")
+      }
+    ]
+  },
 ];
 
 const router = createRouter({
