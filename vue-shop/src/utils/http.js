@@ -4,12 +4,11 @@
 
 // 引入config.js
 import featch from "./featch";
-import { baseHost }  from "../../config";
+import { baseHost } from "../../config";
 
 //  开发环境 development  上线环境 production
 const env = process.env.NODE_ENV;
 let serverURL = "";
-
 
 /**
  * @method getURL 获取请求地址

@@ -25,10 +25,12 @@ instance.interceptors.request.use(
     // 在发送请求之前做些什么
     //在headers头部添加参数
     config.headers["Content-Type"] = "application/json;charset=UTF-8";
-    const token = "";
+
+    const token = window.sessionStorage.getItem("token");
+
     //判断是否存在token令牌
     if (token) {
-      config.headers["token"] = token;
+      config.headers.Authorization = token;
     }
 
     //返回config

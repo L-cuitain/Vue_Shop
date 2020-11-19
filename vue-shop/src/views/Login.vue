@@ -224,7 +224,7 @@ export default {
         //     min : 5 , message : "长度不能小于5" , trigger : "blur"
         //   }
         // ]
-      } 
+      }
     };
   },
   methods: {
@@ -242,19 +242,19 @@ export default {
       console.log(results);
 
       // //获取返回的参数
-      let { data , meta } = results;
+      let { data, meta } = results;
       //判断meta的返回状态码
-      if(meta.status == 400){
+      if (meta.status == 400) {
         this.form.password = "";
         return this.$message.error(meta.msg);
       }
 
-      if(meta.status == 200){
+      if (meta.status == 200) {
         this.$message.success(meta.msg);
         //把返回的token传递给sessionStorage中
-        window.sessionStorage.setItem("token",data.token);
+        window.sessionStorage.setItem("token", data.token);
         //跳转路由
-        this.$router.push('/home');
+        this.$router.push("/home");
       }
     }
   }

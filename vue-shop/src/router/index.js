@@ -19,21 +19,21 @@ const routes = [
     name: "Home",
     path: "/home",
     component: () => import("@/views/Home"),
-    children : [
+    children: [
       {
-        path : "/home",
-        redirect : "/welcome"
+        path: "/home",
+        redirect: "/welcome"
       },
       {
-        path : '/welcome',
-        component : () => import("@/components/Welcome")
+        path: "/welcome",
+        component: () => import("@/components/Welcome")
       },
       {
-        path : '/userList',
-        component : () => import("@/components/UserList")
+        path: "/users",
+        component: () => import("@/components/Users")
       }
     ]
-  },
+  }
 ];
 
 const router = createRouter({

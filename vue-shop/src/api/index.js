@@ -1,4 +1,11 @@
-//关于用户的接口 导出为一个对象
+//关于用户 接口
 export const user = {
-  UserLogin: "login"
+  //
+  UserLogin: "login",
+  UserList: "users"
+};
+
+//左侧侧边栏 接口
+export const rights = {
+  RightsMenus: "menus"
 };
