@@ -52,7 +52,8 @@ instance.interceptors.response.use(
     switch (code) {
       case 200:
         return Promise.resolve(response);
-
+      case 201:
+        return Promise.resolve(response);
       case 400:
         return Promise.resolve(response);
     }

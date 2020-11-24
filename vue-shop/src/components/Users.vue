@@ -38,9 +38,10 @@
                   title="添加用户"
                   cancelText="取消"
                   okText="确定"
-                  v-model:visible="visible"
+                  v-model:visible="addVisible"
                   :confirm-loading="confirmLoading"
                   @ok="addUser"
+                  @cancel="cancelAddUser"
                 >
                   <a-form :rules="rules" v-model:model="form" ref="addForm">
                     <a-row>
@@ -48,6 +49,7 @@
                         <a-form-item
                           label="用户名"
                           required
+                          has-feedback
                           :wrapper-col="{ span: 20 }"
                           :labelCol="{ span: 4 }"
                           name="username"
@@ -57,6 +59,7 @@
                         <a-form-item
                           label="密码"
                           required
+                          has-feedback
                           :wrapper-col="{ span: 20 }"
                           :labelCol="{ span: 4 }"
                           name="password"
@@ -68,6 +71,7 @@
                         </a-form-item>
                         <a-form-item
                           label="邮箱"
+                          has-feedback
                           :wrapper-col="{ span: 20 }"
                           :labelCol="{ span: 4 }"
                           name="email"
@@ -76,6 +80,7 @@
                         </a-form-item>
                         <a-form-item
                           label="手机号"
+                          has-feedback
                           :wrapper-col="{ span: 20 }"
                           :labelCol="{ span: 4 }"
                           name="mobile"
@@ -105,25 +110,83 @@
           <a-switch :checked="text.mg_state" />
         </template>
 
-        <template #operation>
+        <template #operation="{ record }">
+          <!-- 编辑 -->
           <a-button
             type="primary"
             class="operation_button"
             style="background-color: #409eff; color: #fff"
+            @click="showEditModal(record.id)"
             ><EditOutlined
           /></a-button>
+
+          <a-modal
+            title="用户修改"
+            cancelText="取消"
+            okText="确定"
+            v-model:visible="isEdit"
+            :confirm-loading="confirmLoading"
+            @ok="EditUser(record.id)"
+            @cancel="cancelEditUser"
+          >
+            <a-form :rules="EditRules" v-model:model="EditForm" ref="EditForm">
+              <a-row>
+                <a-col :span="24">
+                  <a-form-item
+                    label="用户名"
+                    has-feedback
+                    :wrapper-col="{ span: 20 }"
+                    :labelCol="{ span: 4 }"
+                    name="username"
+                  >
+                    <a-input
+                      type="text"
+                      disabled
+                      v-model:value="EditForm.username"
+                    />
+                  </a-form-item>
+                  <a-form-item
+                    label="邮箱"
+                    has-feedback
+                    :wrapper-col="{ span: 20 }"
+                    :labelCol="{ span: 4 }"
+                    name="email"
+                  >
+                    <a-input type="email" v-model:value="EditForm.email" />
+                  </a-form-item>
+                  <a-form-item
+                    label="手机号"
+                    has-feedback
+                    :wrapper-col="{ span: 20 }"
+                    :labelCol="{ span: 4 }"
+                    name="mobile"
+                  >
+                    <a-input type="text" v-model:value="EditForm.mobile" />
+                  </a-form-item>
+                </a-col>
+              </a-row>
+            </a-form>
+          </a-modal>
+          <!-- 编辑 end -->
+
+          <!-- 删除 -->
           <a-button
             type="danger"
             class="operation_button"
             style="background-color: #f56c6c; color: #fff"
+            @click="handleDelete(record.id)"
             ><DeleteOutlined
           /></a-button>
+          <!-- 删除 end -->
+
+          <!-- 权限 -->
           <a-button
             class="operation_button"
             style="background-color: #e6a23c; color: #fff"
             ><SettingOutlined
           /></a-button>
         </template>
+        <!-- 权限 end -->
       </a-table>
       <!-- 渲染用户数据列表 end -->
 
@@ -147,7 +210,13 @@
 //导入 api
 import { user } from "@/api";
 //导入 http
-import { httpGet , httpPost } from "@/utils/http";
+import { httpGet, httpPost, httpDelete, httpPut } from "@/utils/http";
+//导入删除提示
+import { ExclamationCircleOutlined } from "@ant-design/icons-vue";
+
+import { createVNode } from "vue";
+
+import { message, Modal } from "ant-design-vue";
 
 import {
   EditOutlined,
@@ -207,7 +276,9 @@ export default {
       UserList: [],
 
       //添加用户显示框
-      visible: false,
+      addVisible: false,
+
+      //设置用户显示框的显示和隐藏
       confirmLoading: false,
 
       formInline: {
@@ -230,22 +301,32 @@ export default {
         username: [
           {
             required: true,
-            message: "请输入用户名"
+            message: "请输入用户名",
+            tigger: "blur"
           },
           {
             whitespace: true,
-            message: "不能有空格"
+            message: "不能有空格",
+            tigger: "blur"
+          },
+          {
+            max: 15,
+            min: 2,
+            message: "长度必须为2到15位之间",
+            tigger: "blur"
           }
         ],
         password: [
           {
             required: true,
-            message: "请输入密码"
+            message: "请输入密码",
+            tigger: "blur"
           },
           {
             pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[^]{8,16}$/,
             message:
-              "密码格式不正确 至少8-16个字符，至少1个大写字母，1个小写字母和1个数字，其他可以是任意字符"
+              "密码格式不正确 至少8-16个字符，至少1个大写字母，1个小写字母和1个数字，其他可以是任意字符",
+            tigger: "blur"
           }
         ],
         email: [
@@ -255,6 +336,43 @@ export default {
           }
         ],
         mobile: [
+          {
+            max: 13,
+            min: 13,
+            message: "长度必须为13位"
+          }
+        ]
+      },
+
+      //修改框弹出
+      isEdit: false,
+
+      //定义修改表单数据模型对象
+      EditForm: {
+        username: "",
+        email: "",
+        mobile: ""
+      },
+
+      //定义修改表单规则
+      EditRules: {
+        email: [
+          {
+            required: true,
+            message: "邮箱不能为空",
+            tigger: "blur"
+          },
+          {
+            type: "email",
+            message: "必须为邮箱格式"
+          }
+        ],
+        mobile: [
+          {
+            required: true,
+            message: "手机号不能为空",
+            tigger: "blur"
+          },
           {
             max: 13,
             min: 13,
@@ -272,6 +390,8 @@ export default {
     onSearch(value) {
       console.log("输入的值为: ", value);
     },
+
+    //显示用户列表
     async ShowList() {
       //获取请求地址
       let url = user.UserList;
@@ -306,6 +426,26 @@ export default {
       this.visible = true;
     },
 
+    //显示用户修改提示框
+    async showEditModal(userId) {
+      console.log(userId);
+      //获取url
+      let url = user.UserList;
+
+      //发送请求  获取ID指定的用户信息
+      let results = await httpGet(`${url}/${userId}`);
+
+      //判断响应状态码
+      if (results.meta.status == 200) {
+        this.EditForm.username = results.data.username;
+        this.EditForm.email = results.data.email;
+        this.EditForm.mobile = results.data.mobile;
+      }
+
+      //显示编译文本框
+      this.isEdit = true;
+    },
+
     //添加User数据
     async addUser() {
       //获取表单数据
@@ -317,14 +457,85 @@ export default {
       let url = user.UserList;
       console.log(url);
       //发送请求
-      let results = await httpPost(url,params);
+      let results = await httpPost(url, params);
 
       console.log(results);
 
-      if(results.meta.status== 200){
+      if (results.meta.status == 201) {
         this.visible = false;
         this.confirmLoading = false;
+        message.success(results.meta.msg);
+        //重新调用查询列表方法
+        this.ShowList();
       }
+    },
+
+    //取消添加用户
+    cancelAddUser() {
+      this.$refs.addForm.resetFields();
+    },
+
+    //删除列表项
+    handleDelete(userId) {
+      Modal.confirm({
+        title: "删除警告",
+        icon: createVNode(ExclamationCircleOutlined),
+        content: "你确定要删除此项嘛?",
+        okText: "确定",
+        okType: "danger",
+        cancelText: "取消",
+        onOk: async () => {
+          //获取地址
+          let url = user.UserList;
+
+          //发送Delete请求
+          let results = await httpDelete(`${url}/${userId}`);
+
+          //判断请求后状态码
+          if (results.meta.status == 200) {
+            this.visible = false;
+            //提示框
+            message.success(results.meta.msg);
+            //重新调用获取数据方法
+            this.ShowList();
+          } else {
+            //提示框
+            message.error(results.meta.msg);
+          }
+        }
+      });
+    },
+
+    //编辑页面
+    async EditUser(userId) {
+      console.log(userId);
+      //获取表单的参数
+      let params = await this.$refs.EditForm.validate();
+      // console.log(params);
+
+      //获取地址
+      let url = user.UserList;
+      let results = await httpPut(`${url}/${userId}`, {
+        email: params.email,
+        mobile: params.mobile
+      });
+
+      //判断响应状态码
+      if (results.meta.status == 200) {
+        this.isEdit = false;
+        //提示修改成功
+        message.success(results.meta.msg);
+        //重新调用获取数据方法
+        this.ShowList();
+      } else {
+        //提示修改失败
+        message.error(results.meta.msg);
+      }
+    },
+
+    //取消编辑用户
+    cancelEditUser() {
+      this.$refs.EditForm.resetFields();
     }
   },
 
