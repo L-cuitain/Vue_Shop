@@ -106,9 +106,15 @@
         :pagination="false"
         bordered
       >
+        <!-- 选中按钮 -->
         <template #mg_state="{ text }">
-          <a-switch :checked="text.mg_state" />
+          <a-switch
+            v-model:checked="text.mg_state"
+            :id="text.id"
+            @change="ChooseStatus"
+          />
         </template>
+        <!-- 选中按钮 end -->
 
         <template #operation="{ record }">
           <!-- 编辑 -->
@@ -183,8 +189,41 @@
           <a-button
             class="operation_button"
             style="background-color: #e6a23c; color: #fff"
+            @click="showAllotVisible(record)"
             ><SettingOutlined
           /></a-button>
+          <!-- 权限弹窗 -->
+          <a-modal
+            title="分配角色"
+            v-model:visible="allotVisible"
+            :confirm-loading="confirmLoading"
+            @ok="handlePermission(record.id)"
+            @cancel="handleRoleCancel()"
+          >
+            <p>当前的用户: {{ allotUserData.username }}</p>
+            <p>当前的角色: {{ allotUserData.role_name }}</p>
+            <p>
+              分配新角色:
+              <!-- 分配角色 -->
+              <a-select
+                v-model:value="selectRole"
+                style="width: 120px"
+                @change="showRole"
+                ref="select"
+                placeholder="请选择角色"
+              >
+                <a-select-option
+                  v-for="item in allotRole"
+                  :key="item.id"
+                  :value="item.id"
+                >
+                  <span>{{ item.roleName }}</span>
+                </a-select-option>
+              </a-select>
+              <!-- 分配角色 end -->
+            </p>
+          </a-modal>
+          <!-- 权限弹窗 end -->
         </template>
         <!-- 权限 end -->
       </a-table>
@@ -208,7 +247,7 @@
 
 <script>
 //导入 api
-import { user } from "@/api";
+import { user, role } from "@/api";
 //导入 http
 import { httpGet, httpPost, httpDelete, httpPut } from "@/utils/http";
 //导入删除提示
@@ -281,12 +320,8 @@ export default {
       //设置用户显示框的显示和隐藏
       confirmLoading: false,
 
-      formInline: {
-        username: "",
-        password: "",
-        email: "",
-        mobile: ""
-      },
+      //设置分配角色的显示和隐藏
+      allotVisible: false,
 
       //定义表单数据模型对象
       form: {
@@ -379,7 +414,14 @@ export default {
             message: "长度必须为13位"
           }
         ]
-      }
+      },
+
+      //分配角色用户属性显示
+      allotUserData: {},
+      //分配角色列表
+      allotRole: [],
+      //默认选择角色
+      selectRole: null
     };
   },
   created() {
@@ -423,7 +465,7 @@ export default {
 
     //添加用户显示提示框
     showModal() {
-      this.visible = true;
+      this.addVisible = true;
     },
 
     //显示用户修改提示框
@@ -462,8 +504,9 @@ export default {
       console.log(results);
 
       if (results.meta.status == 201) {
-        this.visible = false;
-        this.confirmLoading = false;
+        this.addVisible = false;
+        // 清空表单中的输入框
+        this.$refs.addForm.resetFields();
         message.success(results.meta.msg);
         //重新调用查询列表方法
         this.ShowList();
@@ -536,6 +579,78 @@ export default {
     //取消编辑用户
     cancelEditUser() {
       this.$refs.EditForm.resetFields();
+    },
+
+    //显示分配角色弹窗
+    async showAllotVisible(user) {
+      //获取user对象中的数据 存入
+      this.allotUserData = user;
+      //获取请求地址
+      let url = role.GetRoles;
+      //发送请求  根据id 获取 此用户数据
+      let results = await httpGet(`${url}`);
+
+      //判断相应状态码
+      if (results.meta.status == 200) {
+        //将分配的角色传给数组
+        this.allotRole = results.data;
+
+        //显示弹窗
+        this.allotVisible = true;
+      }
+    },
+
+    showRole(value) {
+      console.log(value);
+    },
+
+    //分配角色确定事件
+    async handlePermission(userId) {
+      //获取选中的 角色id
+      let roleId = this.selectRole;
+
+      //发起请求
+      let results = await httpPut(`users/${userId}/role`, {
+        rid: roleId
+      });
+
+      //判断相应状态码
+      if (results.meta.status == 200) {
+        //默认选择重置
+        this.selectRole = null;
+        //提示成功信息
+        message.success(results.meta.msg);
+        //重新调用获取用户数据
+        this.ShowList();
+      } else {
+        //默认选择重置
+        this.selectRole = null;
+        //提示失败信息
+        message.error(results.meta.msg);
+      }
+
+      //关闭弹窗
+      this.allotVisible = false;
+    },
+
+    //取消分配角色
+    handleRoleCancel() {
+      //默认选择重置
+      this.selectRole = null;
+    },
+
+    //改变用户状态
+    async ChooseStatus(check, event) {
+      console.log(event.target.id);
+      //发起请求
+      let results = await httpPut(`users/${event.target.id}/state/${check}`);
+
+      //判断响应状态码
+      if (results.meta.status == 200) {
+        message.success(results.meta.msg);
+      } else {
+        message.error(results.meta.msg);
+      }
     }
   },
 

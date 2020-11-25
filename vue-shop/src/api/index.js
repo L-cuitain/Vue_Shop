@@ -9,3 +9,9 @@ export const user = {
 export const rights = {
   RightsMenus: "menus"
 };
+
+//关于权限 接口
+export const role = {
+  //获取所有角色
+  GetRoles: "roles"
+};
