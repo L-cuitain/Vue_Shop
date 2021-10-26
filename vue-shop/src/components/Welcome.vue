@@ -1,6 +1,6 @@
 <template>
   <div>
-    <a-breadcrumb style="margin: 16px 0">
+    <a-breadcrumb separator=">" style="margin: 16px 0">
       <a-breadcrumb-item style="color: #000;font-weight:bold;"
         >首页</a-breadcrumb-item
       >

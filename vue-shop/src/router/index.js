@@ -31,6 +31,14 @@ const routes = [
       {
         path: "/users",
         component: () => import("@/components/Users")
+      },
+      {
+        path : "/rights",
+        component: () => import("@/components/Rights")
+      },
+      {
+        path: "/roles",
+        component: () => import("@/components/Roles")
       }
     ]
   }
